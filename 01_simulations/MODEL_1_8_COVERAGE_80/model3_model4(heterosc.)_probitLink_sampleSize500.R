@@ -62,7 +62,7 @@ coverage.rq <- function(
       lower_bound = pi[1],
       upper_bound = pi[2],
       observation = ynew,
-      alpha = 0.05
+      alpha = 0.2
     )
   }
   return( list( pi.hits/nsim, pred_bounds, interval_score  ) )
@@ -71,7 +71,7 @@ coverage.rq <- function(
 ##simulation coverage 80% quantile regression
 set.seed(21)
 nsim=1000
-nobs=1000
+nobs=500
 quantreg.coverage.model3 <-  matrix(NA, nsim, 3)
 quantreg.coverage.model4 <- matrix(NA, nsim, 3)
 quantreg.intScore.model3 <-  matrix(NA, nsim, 3)
@@ -102,7 +102,7 @@ for(k in 1:nsim){
     #normal error
     model3_pred_int <- coverage.rq(x=x, 
                                    beta = c(beta0,beta1), err.distr = "het1",
-                                   tau=c(0.025,0.975), xnew = xnew.values[i],
+                                   tau=c(0.1,0.9), xnew = xnew.values[i],
                                    nsim = 1)
     model3_bounds[[i]][k,]<- model3_pred_int[[2]]
     quantreg.coverage.model3[k,i] <- model3_pred_int[[1]]
@@ -111,7 +111,7 @@ for(k in 1:nsim){
     #chisq error
     model4_pred_int <- coverage.rq(x=x,
                                    beta = c(beta0,beta1), err.distr = "het2",
-                                   tau=c(0.025,0.975), xnew = xnew.values[i],
+                                   tau=c(0.1,0.9), xnew = xnew.values[i],
                                    nsim = 1)
     model4_bounds[[i]][k,]<- model4_pred_int[[2]]
     quantreg.coverage.model4[k,i] <- model4_pred_int[[1]]
@@ -120,41 +120,35 @@ for(k in 1:nsim){
   
 }
 
-# prediction interval coevrage
-colMeans(quantreg.coverage.model3)
-#[1] 1.000 1.000 0.923
-
-colMeans(quantreg.coverage.model4)
-# 0.908 1.000 1.000
-
-# avg interval width
-mean(model3_bounds[[1]][,2]-model3_bounds[[1]][,1])
-mean(model3_bounds[[2]][,2]-model3_bounds[[2]][,1])
-mean(model3_bounds[[3]][,2]-model3_bounds[[3]][,1])
-# > mean(model3_bounds[[1]][,2]-model3_bounds[[1]][,1])
-# [1] 3.568797
+# # prediction interval coevrage
+#   > colMeans(quantreg.coverage.model3)
+# [1] 0.969 0.931 0.613
+#   > colMeans(quantreg.coverage.model4)
+# [1] 0.594 0.931 0.959
+# 
+# # avg interval width
+#   > mean(model3_bounds[[1]][,2]-model3_bounds[[1]][,1])
+# [1] 1.209216
 # > mean(model3_bounds[[2]][,2]-model3_bounds[[2]][,1])
-# [1] 7.958519
+# [1] 3.763581
 # > mean(model3_bounds[[3]][,2]-model3_bounds[[3]][,1])
-# [1] 12.30267
-
-
-mean(model4_bounds[[1]][,2]-model4_bounds[[1]][,1])
-mean(model4_bounds[[2]][,2]-model4_bounds[[2]][,1])
-mean(model4_bounds[[3]][,2]-model4_bounds[[3]][,1])
-# > mean(model4_bounds[[1]][,2]-model4_bounds[[1]][,1])
-# [1] 12.2711
+# [1] 6.315071
+# 
+#   > mean(model4_bounds[[1]][,2]-model4_bounds[[1]][,1])
+# [1] 6.337029
 # > mean(model4_bounds[[2]][,2]-model4_bounds[[2]][,1])
-# [1] 7.928364
+# [1] 3.766502
 # > mean(model4_bounds[[3]][,2]-model4_bounds[[3]][,1])
-# [1] 3.563485
+# [1] 1.212655
+# 
+# 
+# # avg interval score
+#   > colMeans(quantreg.intScore.model3)
+# [1]  1.241009  4.043269 14.141658
+# 
+#   > colMeans(quantreg.intScore.model4)
+# [1] 13.893016  4.058659  1.260170
 
-# avg interval score
-colMeans(quantreg.intScore.model3)
-3.568797  7.958519 16.310602
-
-colMeans(quantreg.intScore.model4)
-17.756525  7.928364  3.563485
 
 
 
@@ -234,7 +228,7 @@ coverage.splitfit <- function(
       lower_bound = pi[1],
       upper_bound = pi[2],
       observation = ynew,
-      alpha = 0.05
+      alpha = 0.2
     )
   }
   return( list( pi.hits/nsim, pred_bounds, interval_score ) )
@@ -243,7 +237,7 @@ coverage.splitfit <- function(
 ##simulation coverage 80% varying-threshold model 3 and model 4
 set.seed(21)
 nsim=1000
-nobs=1000
+nobs=500
 splitfit.coverage.model3 <-  matrix(NA, nsim, 3)
 splitfit.coverage.model4 <- matrix(NA, nsim, 3)
 splitfit.intScore.model3 <-  matrix(NA, nsim, 3)
@@ -274,7 +268,7 @@ for(k in 1:nsim){
     splitfit.model3_pred_int <- coverage.splitfit(x=x, 
                                                   beta = c(beta0,beta1), 
                                                   err.distr = "het1",
-                                                  tau=c(0.025,0.975), 
+                                                  tau=c(0.1,0.9), 
                                                   xnew = xnew.values[i],
                                                   nsim = 1)
     
@@ -286,7 +280,7 @@ for(k in 1:nsim){
     splitfit.model4_pred_int <- coverage.splitfit(x=x,
                                                   beta = c(beta0,beta1), 
                                                   err.distr = "het2",
-                                                  tau=c(0.025,0.975), 
+                                                  tau=c(0.1,0.9), 
                                                   xnew = xnew.values[i],
                                                   nsim = 1)
     splitfit.coverage.model4[k,i] <- splitfit.model4_pred_int[[1]]
@@ -297,37 +291,42 @@ for(k in 1:nsim){
 }
 
 
-# # coverage
-# colMeans(splitfit.coverage.model3, na.rm = F)
-# [1] 1.000 0.998 0.899
-# 
-# colMeans(splitfit.coverage.model4, na.rm = F )
-# [1] 0.902 0.999 1.000
-# 
-# # interval width
-# mean( splitfit.model4_bounds[[1]][,2] - splitfit.model4_bounds[[1]][,1])
-# [1] 18.47979
-# mean( splitfit.model4_bounds[[2]][,2] - splitfit.model4_bounds[[2]][,1])
-# [1] 7.400119
-# mean( splitfit.model4_bounds[[3]][,2] - splitfit.model4_bounds[[3]][,1])
-# [1] 6.822311
-# 
-# 
-# mean( splitfit.model3_bounds[[1]][,2] - splitfit.model3_bounds[[1]][,1])
-# [1] 6.669608
-# mean( splitfit.model3_bounds[[2]][,2] - splitfit.model3_bounds[[2]][,1])
-# [1] 7.391654
-# mean( splitfit.model3_bounds[[3]][,2] - splitfit.model3_bounds[[3]][,1])
-# [1] 18.4868
-# 
-# # interval score
-# colMeans(splitfit.intScore.model3)
-# [1]  6.669608  7.411906 24.402656
-# 
-# 
-# colMeans(splitfit.intScore.model4)
-# [1] 24.914052  7.428959  6.822311
+# coverage
+colMeans(splitfit.coverage.model3, na.rm = F)
+0.998 0.929 0.658
 
+colMeans(splitfit.coverage.model4, na.rm = F )
+0.658 0.941 0.995
+
+# interval width
+mean( splitfit.model4_bounds[[1]][,2] - splitfit.model4_bounds[[1]][,1])
+mean( splitfit.model4_bounds[[2]][,2] - splitfit.model4_bounds[[2]][,1])
+mean( splitfit.model4_bounds[[3]][,2] - splitfit.model4_bounds[[3]][,1])
+# > mean( splitfit.model4_bounds[[1]][,2] - splitfit.model4_bounds[[1]][,1])
+# [1] 6.979131
+# > mean( splitfit.model4_bounds[[2]][,2] - splitfit.model4_bounds[[2]][,1])
+# [1] 4.104551
+# > mean( splitfit.model4_bounds[[3]][,2] - splitfit.model4_bounds[[3]][,1])
+# [1] 3.116168
+
+mean( splitfit.model3_bounds[[1]][,2] - splitfit.model3_bounds[[1]][,1])
+mean( splitfit.model3_bounds[[2]][,2] - splitfit.model3_bounds[[2]][,1])
+mean( splitfit.model3_bounds[[3]][,2] - splitfit.model3_bounds[[3]][,1])
+# > mean( splitfit.model3_bounds[[1]][,2] - splitfit.model3_bounds[[1]][,1])
+# [1] 3.111135
+# > mean( splitfit.model3_bounds[[2]][,2] - splitfit.model3_bounds[[2]][,1])
+# [1] 4.108347
+# > mean( splitfit.model3_bounds[[3]][,2] - splitfit.model3_bounds[[3]][,1])
+# [1] 6.942572
+
+
+
+# interval score
+colMeans(splitfit.intScore.model3)
+#   3.111955  4.425212 13.805201
+
+colMeans(splitfit.intScore.model4)
+# 13.545003  4.380312  3.126690
 
 
 #####

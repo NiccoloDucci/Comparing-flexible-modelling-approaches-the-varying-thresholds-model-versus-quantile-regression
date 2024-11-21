@@ -98,15 +98,23 @@ for(k in 1:nsim){
 
 # coverage
 colMeans(quantreg.coverage.model6)
+0.999 1.000 1.000
 
 # avg interval width
 mean(model6_bounds[[1]][,2]-model6_bounds[[1]][,1])
 mean(model6_bounds[[2]][,2]-model6_bounds[[2]][,1])
 mean(model6_bounds[[3]][,2]-model6_bounds[[3]][,1])
+# > mean(model6_bounds[[1]][,2]-model6_bounds[[1]][,1])
+# [1] 8.331101
+# > mean(model6_bounds[[2]][,2]-model6_bounds[[2]][,1])
+# [1] 10.77734
+# > mean(model6_bounds[[3]][,2]-model6_bounds[[3]][,1])
+# [1] 13.21327
+
 
 # avg interval score
 colMeans(quantreg.intScore.model6)
-
+# 8.337514 10.777343 13.213272
 
 #### varying thresholds model simulation model 6 ####
 
@@ -224,16 +232,21 @@ for(k in 1:nsim){
   print(k)
 }
 
-# coverage
-colMeans(splitfit.coverage.model6, na.rm = F)
-
-# avg interval width
-mean( splitfit.model6_bounds[[1]][,2] - splitfit.model6_bounds[[1]][,1])
-mean( splitfit.model6_bounds[[2]][,2] - splitfit.model6_bounds[[2]][,1])
-mean( splitfit.model6_bounds[[3]][,2] - splitfit.model6_bounds[[3]][,1])
-
-
-# avg interval score
-colMeans(splitfit.intScore.model6, na.rm = F)
+# # coverage
+#  colMeans(splitfit.coverage.model6, na.rm = F)
+# [1] 0.933 0.949 0.948
+# 
+# # avg interval width
+# mean( splitfit.model6_bounds[[1]][,2] - splitfit.model6_bounds[[1]][,1])
+# [1] 7.740138
+# > mean( splitfit.model6_bounds[[2]][,2] - splitfit.model6_bounds[[2]][,1])
+# [1] 4.211316
+# > mean( splitfit.model6_bounds[[3]][,2] - splitfit.model6_bounds[[3]][,1])
+# [1] 10.99746
+# 
+# 
+# # avg interval score
+#  colMeans(splitfit.intScore.model6, na.rm = F)
+# [1]  8.925589  5.042240 11.723861
 
 

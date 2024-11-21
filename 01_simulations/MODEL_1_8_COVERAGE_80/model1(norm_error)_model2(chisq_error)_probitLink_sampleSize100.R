@@ -25,7 +25,7 @@ coverage.rq <- function(
     tau, # quantiles
     xnew, # new x-value for which to predict
     nsim # number of replicates to simulate
-    ) {
+) {
   pi.hits <- 0
   n <- length(x)
   pred_bounds <- matrix(NA, nsim, 2)
@@ -62,16 +62,16 @@ coverage.rq <- function(
       lower_bound = pi[1],
       upper_bound = pi[2],
       observation = ynew,
-      alpha = 0.05
+      alpha = 0.2
     )
   }
   return(list(pi.hits / nsim, pred_bounds, interval_score))
 }
 
-## simulation coverage 95% quantile regression i.i.d case
+## simulation coverage 80% quantile regression i.i.d case
 set.seed(21)
 nsim <- 1000
-nobs <- 1000
+nobs <- 100
 quantreg.coverage.norm <- matrix(NA, nsim, 3)
 quantreg.intScore.norm <- matrix(NA, nsim, 3)
 quantreg.coverage.chisq <- matrix(NA, nsim, 3)
@@ -95,28 +95,28 @@ for (k in 1:nsim) {
   sd.x <- 1
   x <- rnorm(nobs, mean = mu.x, sd = sd.x)
   xnew.values <- qnorm(c(.1, .5, .9), mean = mu.x, sd = sd.x)
-
+  
   # base model
   beta0 <- 1
   beta1 <- 2
-
+  
   for (i in 1:length(xnew.values)) {
     # normal error
     normal_pred_int <- coverage.rq(
       x = x,
       beta = c(beta0, beta1), err.distr = "normal",
-      tau = c(0.025, 0.975), xnew = xnew.values[i],
+      tau = c(0.1, 0.9), xnew = xnew.values[i],
       nsim = 1
     )
     normal_bounds[[i]][k, ] <- normal_pred_int[[2]]
     quantreg.coverage.norm[k, i] <- normal_pred_int[[1]]
     quantreg.intScore.norm[k, i] <- normal_pred_int[[3]]
-
+    
     # chisq error
     chisq_pred_int <- coverage.rq(
       x = x,
       beta = c(beta0, beta1), err.distr = "chisq",
-      tau = c(0.025, 0.975), xnew = xnew.values[i],
+      tau = c(0.1, 0.9), xnew = xnew.values[i],
       nsim = 1
     )
     chisq_bounds[[i]][k, ] <- chisq_pred_int[[2]]
@@ -126,42 +126,46 @@ for (k in 1:nsim) {
 }
 
 # model 1 coverage
-colMeans(quantreg.coverage.norm) %>% round(. , 3)
-0.953 0.940 0.938
+colMeans(quantreg.coverage.norm)
+# 0.774 0.791 0.783
 
 # model 2 coverage
-colMeans(quantreg.coverage.chisq) %>% round(. , 3)
-0.947 0.968 0.943
+colMeans(quantreg.coverage.chisq)
+# 0.793 0.746 0.765
+
+
 
 # model 1 normal interval width
-mean(normal_bounds[[1]][, 2] - normal_bounds[[1]][, 1]) %>% round(. , 3)
-mean(normal_bounds[[2]][, 2] - normal_bounds[[2]][, 1]) %>% round(. , 3)
-mean(normal_bounds[[3]][, 2] - normal_bounds[[3]][, 1]) %>% round(. , 3)
-# > mean(normal_bounds[[1]][, 2] - normal_bounds[[1]][, 1]) %>% round(. , 3)
-# [1] 3.923
-# > mean(normal_bounds[[2]][, 2] - normal_bounds[[2]][, 1]) %>% round(. , 3)
-# [1] 3.912
-# > mean(normal_bounds[[3]][, 2] - normal_bounds[[3]][, 1]) %>% round(. , 3)
-# [1] 3.906
+mean(normal_bounds[[1]][, 2] - normal_bounds[[1]][, 1])
+mean(normal_bounds[[2]][, 2] - normal_bounds[[2]][, 1])
+mean(normal_bounds[[3]][, 2] - normal_bounds[[3]][, 1])
+#> mean(normal_bounds[[1]][, 2] - normal_bounds[[1]][, 1])
+#[1] 2.547
+#> mean(normal_bounds[[2]][, 2] - normal_bounds[[2]][, 1])
+#[1] 2.557
+#> mean(normal_bounds[[3]][, 2] - normal_bounds[[3]][, 1])
+#[1] 2.543
 
 # model 2 chi-square interval width
-mean(chisq_bounds[[1]][, 2] - chisq_bounds[[1]][, 1]) %>% round(. , 3)
-mean(chisq_bounds[[2]][, 2] - chisq_bounds[[2]][, 1]) %>% round(. , 3)
-mean(chisq_bounds[[3]][, 2] - chisq_bounds[[3]][, 1]) %>% round(. , 3)
-> mean(chisq_bounds[[1]][, 2] - chisq_bounds[[1]][, 1]) %>% round(. , 3)
-# [1] 9.125
-# > mean(chisq_bounds[[2]][, 2] - chisq_bounds[[2]][, 1]) %>% round(. , 3)
-# [1] 9.129
-# > mean(chisq_bounds[[3]][, 2] - chisq_bounds[[3]][, 1]) %>% round(. , 3)
-# [1] 9.162
+mean(chisq_bounds[[1]][, 2] - chisq_bounds[[1]][, 1])
+mean(chisq_bounds[[2]][, 2] - chisq_bounds[[2]][, 1])
+mean(chisq_bounds[[3]][, 2] - chisq_bounds[[3]][, 1])
+#> mean(chisq_bounds[[1]][, 2] - chisq_bounds[[1]][, 1])
+#[1] 5.640
+#> mean(chisq_bounds[[2]][, 2] - chisq_bounds[[2]][, 1])
+#[1] 5.674
+#> mean(chisq_bounds[[3]][, 2] - chisq_bounds[[3]][, 1])
+#[1] 5.634
 
 # model 1 normal interval score
-colMeans(quantreg.intScore.norm) %>% round(. , 3)
-# 4.643 4.954 4.880
+colMeans(quantreg.intScore.norm)
+# 3.661699 3.547086 3.432073
 
 # model 2 chi-square interval score
-colMeans(quantreg.intScore.chisq) %>% round(. , 3)
-# 12.466  9.870 11.501
+colMeans(quantreg.intScore.chisq)
+# 8.450921 8.631527 8.702347
+
+#####
 
 #### varying threshold model simulation####
 
@@ -172,12 +176,12 @@ coverage.splitfit <- function(
     tau, # quantiles
     xnew, # new x-value for which to predict
     nsim # number of replicates to simulate
-    ) {
+) {
   pi.hits <- 0
   n <- length(x)
   pred_bounds <- matrix(NA, nsim, 2)
   interval_score <- matrix(NA, nsim, 1)
-
+  
   for (i in 1:nsim) {
     # error type
     if (err.distr == "normal") {
@@ -188,7 +192,7 @@ coverage.splitfit <- function(
     }
     # simulate the observed data
     y <- beta[1] + beta[2] * x + err
-
+    
     # fit the model
     ### splits generation
     # k=52 (50 + 2), there are k+1 theta thresholds
@@ -242,7 +246,7 @@ coverage.splitfit <- function(
       lower_bound = pi[1],
       upper_bound = pi[2],
       observation = ynew,
-      alpha = 0.05
+      alpha = 0.2
     )
   }
   return(list(pi.hits / nsim, pred_bounds, interval_score))
@@ -251,7 +255,7 @@ coverage.splitfit <- function(
 ## simulation coverage 80% varying-threshold model i.i.d case
 set.seed(21)
 nsim <- 1000
-nobs <- 1000
+nobs <- 100
 splitfit.coverage.norm <- matrix(NA, nsim, 3)
 splitfit.coverage.chisq <- matrix(NA, nsim, 3)
 
@@ -269,41 +273,38 @@ splitfit.chisq_bounds <- list(
   matrix(NA, nsim, 2)
 )
 
-
-
-
 for (k in 1:nsim) {
   # independent variable
   mu.x <- 5
   sd.x <- 1
   x <- rnorm(nobs, mean = mu.x, sd = sd.x)
   xnew.values <- qnorm(c(.1, .5, .9), mean = mu.x, sd = sd.x)
-
+  
   # base model
   beta0 <- 1
   beta1 <- 2
-
+  
   for (i in 1:length(xnew.values)) {
     # normal error
     splitfit.normal_pred_int <- coverage.splitfit(
       x = x,
       beta = c(beta0, beta1),
       err.distr = "normal",
-      tau = c(0.025, 0.975),
+      tau = c(0.1, 0.9),
       xnew = xnew.values[i],
       nsim = 1
     )
-
+    
     splitfit.normal_bounds[[i]][k, ] <- splitfit.normal_pred_int[[2]]
     splitfit.coverage.norm[k, i] <- splitfit.normal_pred_int[[1]]
     splitfit.intScore.norm[k, i] <- splitfit.normal_pred_int[[3]]
-
+    
     # chisq error
     splitfit.chisq_pred_int <- coverage.splitfit(
       x = x,
       beta = c(beta0, beta1),
       err.distr = "chisq",
-      tau = c(0.025, 0.975),
+      tau = c(0.1, 0.9),
       xnew = xnew.values[i],
       nsim = 1
     )
@@ -314,49 +315,44 @@ for (k in 1:nsim) {
   print(k)
 }
 
-
 # model 1 coverage
 colMeans(splitfit.coverage.norm)
-0.951 0.941 0.941
+#  0.812 0.773 0.788
 
 # model 2 coverage
 colMeans(splitfit.coverage.chisq)
-0.954 0.988 0.990
+# 0.799 0.739 0.882
 
 # model 1 normal interval width
 mean(splitfit.normal_bounds[[1]][, 2] - splitfit.normal_bounds[[1]][, 1])
-
 mean(splitfit.normal_bounds[[2]][, 2] - splitfit.normal_bounds[[2]][, 1])
-
 mean(splitfit.normal_bounds[[3]][, 2] - splitfit.normal_bounds[[3]][, 1])
-# > mean(splitfit.normal_bounds[[1]][, 2] - splitfit.normal_bounds[[1]][, 1])
-# [1] 4.055805
-# > 
-#   > mean(splitfit.normal_bounds[[2]][, 2] - splitfit.normal_bounds[[2]][, 1])
-# [1] 3.922785
-# > 
-#   > mean(splitfit.normal_bounds[[3]][, 2] - splitfit.normal_bounds[[3]][, 1])
-# [1] 4.048776
+#> mean(splitfit.normal_bounds[[1]][, 2] - splitfit.normal_bounds[[1]][, 1])
+#[1] 2.98312
+#> mean(splitfit.normal_bounds[[2]][, 2] - splitfit.normal_bounds[[2]][, 1])
+#[1] 2.475637
+#> mean(splitfit.normal_bounds[[3]][, 2] - splitfit.normal_bounds[[3]][, 1])
+#[1] 2.96434
 
 
 # model 2 chi-square interval width
 mean(splitfit.chisq_bounds[[1]][, 2] - splitfit.chisq_bounds[[1]][, 1])
 mean(splitfit.chisq_bounds[[2]][, 2] - splitfit.chisq_bounds[[2]][, 1])
 mean(splitfit.chisq_bounds[[3]][, 2] - splitfit.chisq_bounds[[3]][, 1])
-# > mean(splitfit.chisq_bounds[[1]][, 2] - splitfit.chisq_bounds[[1]][, 1])
-# [1] 8.697748
-# > mean(splitfit.chisq_bounds[[2]][, 2] - splitfit.chisq_bounds[[2]][, 1])
-# [1] 9.645761
-# > mean(splitfit.chisq_bounds[[3]][, 2] - splitfit.chisq_bounds[[3]][, 1])
-# [1] 12.20651
+#> mean(splitfit.chisq_bounds[[1]][, 2] - splitfit.chisq_bounds[[1]][, 1])
+#[1] 5.300
+#> mean(splitfit.chisq_bounds[[2]][, 2] - splitfit.chisq_bounds[[2]][, 1])
+#[1] 5.688
+#> mean(splitfit.chisq_bounds[[3]][, 2] - splitfit.chisq_bounds[[3]][, 1])
+#[1] 7.451
 
 # model 1 normal interval score
 colMeans(splitfit.intScore.norm)
-4.803137 4.913562 5.013347
-
+#  4.098365 3.663728 3.977511
 
 # model 2 chi-square interval score
 colMeans(splitfit.intScore.chisq)
-12.73070 10.36429 13.13943
+# 9.026443 8.713211 9.317977
+
 
 #####

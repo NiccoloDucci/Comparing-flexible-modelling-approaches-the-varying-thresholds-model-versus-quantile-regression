@@ -104,14 +104,23 @@ for (k in 1:nsim) {
 
 # coverage
 colMeans(quantreg.coverage.model8)
+# 0.978 0.824 0.982
 
 # avg interval width
 mean(model8_bounds[[1]][, 2] - model8_bounds[[1]][, 1])
 mean(model8_bounds[[2]][, 2] - model8_bounds[[2]][, 1])
 mean(model8_bounds[[3]][, 2] - model8_bounds[[3]][, 1])
+# > mean(model8_bounds[[1]][, 2] - model8_bounds[[1]][, 1])
+# [1] 10.44758
+# > mean(model8_bounds[[2]][, 2] - model8_bounds[[2]][, 1])
+# [1] 10.47444
+# > mean(model8_bounds[[3]][, 2] - model8_bounds[[3]][, 1])
+# [1] 10.4809
 
 # avg interval score
 colMeans(quantreg.intScore.model8)
+# 12.42487 18.33766 11.59643
+
 
 #### PROBIT LINK: varying thresholds model simulation model 8  ####
 
@@ -233,16 +242,21 @@ for (k in 1:nsim) {
   print(k)
 }
 
-# coverage
-colMeans(splitfit.coverage.model8)
-
-# avg interval width
-mean(splitfit.model8_bounds[[1]][, 2] - splitfit.model8_bounds[[1]][, 1])
-mean(splitfit.model8_bounds[[2]][, 2] - splitfit.model8_bounds[[2]][, 1])
-mean(splitfit.model8_bounds[[3]][, 2] - splitfit.model8_bounds[[3]][, 1])
-
-# avg interval score
-colMeans(splitfit.intScore.model8)
+# # coverage
+# colMeans(splitfit.coverage.model8)
+# [1] 0.939 0.958 0.939
+# 
+# # avg interval width
+# mean(splitfit.model8_bounds[[1]][, 2] - splitfit.model8_bounds[[1]][, 1])
+# [1] 7.249834
+# mean(splitfit.model8_bounds[[2]][, 2] - splitfit.model8_bounds[[2]][, 1])
+# [1] 7.232066
+# mean(splitfit.model8_bounds[[3]][, 2] - splitfit.model8_bounds[[3]][, 1])
+# [1] 7.064055
+# 
+# # avg interval score
+# colMeans(splitfit.intScore.model8)
+# [1] 10.766243  9.653327  9.775507
 
 
 #### ROBIT LINK: varying thresholds model simulation model 8  ####
@@ -369,12 +383,20 @@ for (k in 1:nsim) {
 
 # coverage
 colMeans(splitfit.coverage.model8_probit, na.rm = F)
-
+# 0.917 0.932 0.924
 
 # avg interval width
 mean(splitfit.model8_bounds_probit[[1]][, 2] - splitfit.model8_bounds_probit[[1]][, 1])
 mean(splitfit.model8_bounds_probit[[2]][, 2] - splitfit.model8_bounds_probit[[2]][, 1])
 mean(splitfit.model8_bounds_probit[[3]][, 2] - splitfit.model8_bounds_probit[[3]][, 1])
+# > mean(splitfit.model8_bounds_probit[[1]][, 2] - splitfit.model8_bounds_probit[[1]][, 1])
+# [1] 5.999452
+# > mean(splitfit.model8_bounds_probit[[2]][, 2] - splitfit.model8_bounds_probit[[2]][, 1])
+# [1] 5.677651
+# > mean(splitfit.model8_bounds_probit[[3]][, 2] - splitfit.model8_bounds_probit[[3]][, 1])
+# [1] 5.58598
 
 # avg interval score
 colMeans(splitfit.intScore.model8_probit, na.rm = F)
+# 10.273161  9.672628  9.361456
+

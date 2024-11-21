@@ -64,8 +64,8 @@ coverage.rq.cubic <- function(
 
 ##simulation coverage 80% quantile regression i.i.d case
 set.seed(21)
-nsim=500
-nobs=1000
+nsim=1000
+nobs=500
 quantreg.coverage.model6 <-  matrix(NA, nsim, 3)
 quantreg.intScore.model6 <- matrix(NA, nsim, 3)
 model6_bounds <- list(matrix(NA, nsim, 2), 
@@ -98,15 +98,22 @@ for(k in 1:nsim){
 
 # coverage
 colMeans(quantreg.coverage.model6)
+# 0.987 1.000 1.000
 
 # avg interval width
 mean(model6_bounds[[1]][,2]-model6_bounds[[1]][,1])
 mean(model6_bounds[[2]][,2]-model6_bounds[[2]][,1])
 mean(model6_bounds[[3]][,2]-model6_bounds[[3]][,1])
+#> mean(model6_bounds[[1]][,2]-model6_bounds[[1]][,1])
+#[1] 6.621
+#> mean(model6_bounds[[2]][,2]-model6_bounds[[2]][,1])
+#[1] 8.533
+#> mean(model6_bounds[[3]][,2]-model6_bounds[[3]][,1])
+#[1] 10.460
 
 # avg interval score
 colMeans(quantreg.intScore.model6)
-
+# 6.661  8.533 10.460
 
 
 #### varying thresholds model simulation model 6 ####
@@ -188,8 +195,8 @@ coverage.splitfit.cubic <- function(
 
 ##simulation coverage 80% varying-threshold model i.i.d case
 set.seed(21)
-nsim=500
-nobs=1000
+nsim=1000
+nobs=500
 splitfit.coverage.model6 <-  matrix(NA, nsim, 3)
 splitfit.intScore.model6 <- matrix(NA, nsim, 3)
 splitfit.model6_bounds <- list(matrix(NA, nsim, 2), 
@@ -227,16 +234,21 @@ for(k in 1:nsim){
 
 # coverage
 colMeans(splitfit.coverage.model6, na.rm = F)
-
+#  0.892 0.884 0.719
 
 # avg interval width
 mean( splitfit.model6_bounds[[1]][,2] - splitfit.model6_bounds[[1]][,1])
 mean( splitfit.model6_bounds[[2]][,2] - splitfit.model6_bounds[[2]][,1])
 mean( splitfit.model6_bounds[[3]][,2] - splitfit.model6_bounds[[3]][,1])
-
+#> mean( splitfit.model6_bounds[[1]][,2] - splitfit.model6_bounds[[1]][,1])
+#[1] 6.643
+#> mean( splitfit.model6_bounds[[2]][,2] - splitfit.model6_bounds[[2]][,1])
+#[1] 3.364
+#> mean( splitfit.model6_bounds[[3]][,2] - splitfit.model6_bounds[[3]][,1])
+#[1] 2.755
 
 # avg interval score
 colMeans(splitfit.intScore.model6, na.rm = F)
-
+# 7.253 3.898 4.288
 
 

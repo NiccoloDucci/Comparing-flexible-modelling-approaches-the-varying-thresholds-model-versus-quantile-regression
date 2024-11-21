@@ -1,4 +1,4 @@
-### PREDICTION INTERVALS - model 5 normal errors i.i.d with quadratic effect ###
+### PREDICTION INTERVALS - model 7 contaminated normal errors ###
 
 ##### Libraries #####
 library(tidyverse)
@@ -12,38 +12,55 @@ source("C:\\Users\\nicco\\Desktop\\UNI\\00Esami in corso\\Tesi\\ADAC_revision\\0
 source("C:\\Users\\nicco\\Desktop\\UNI\\00Esami in corso\\Tesi\\ADAC_revision\\00_functions\\parametric_splits_quantiles.R")
 source("C:\\Users\\nicco\\Desktop\\UNI\\00Esami in corso\\Tesi\\ADAC_revision\\00_functions\\interval_score.R")
 
+# error contaminated normal
+cont_norm <- function(n, # number of samples
+                      mu1, #  mu distribution 1 .
+                      mu2, # mu distribution 2 .
+                      sd1, # sd of the first distr
+                      sd2, # sd of the second distr
+                      prob # contamination proportion
+) {
+  s <- sample(c(sd1, sd2), n, replace = T, prob = c(1 - prob, prob))
+  m <- sample(c(mu1, mu2), n, replace = T, prob = c(1 - prob, prob))
+  rnorm(n, mean = m, sd = s)
+}
+
 #####
 
 ## PREDICTION INTERVAL SIMULATION ##
 
-#### quantile regression simulation####
-coverage.rq.model5 <- function(
+#### quantile regression simulation ####
+
+coverage.rq <- function(
     x, # covariate
     beta, # true parameter values
     err.distr, # type of error distribution
     tau, # quantiles
     xnew, # new x-value for which to predict
     nsim # number of replicates to simulate
-    ) {
+) {
   pi.hits <- 0
   n <- length(x)
   pred_bounds <- matrix(NA, nsim, 2)
   interval_score <- matrix(NA, nsim, 1)
-
-
+  
   for (i in 1:nsim) {
     # error type
-    if (err.distr == "normal") {
-      err <- rnorm(n, mean = 0, sd = 1)
+    if (err.distr == "contamin_normal") {
+      err <- cont_norm(n, mu1 = 0, sd1 = 5, mu2 = 50, sd2 = 5, prob = 0.1)
     }
+    
     # simulate the observed data
-    y <- beta[1] + beta[2] * (x) + beta[3] * (x^2) + err
+    y <- beta[1] + beta[2] * x + err
+    
     # fit the model
     mod <- rq(formula = y ~ x, tau = tau)
+    
     # simulate a new observation to predict
-    if (err.distr == "normal") {
-      ynew <- beta[1] + beta[2] * (xnew) + beta[3] * (xnew^2) + rnorm(1, 0, 1)
+    if (err.distr == "contamin_normal") {
+      ynew <- beta[1] + beta[2] * xnew + cont_norm(1, mu1 = 0, sd1 = 5, mu2 = 50, sd2 = 5, prob = 0.1)
     }
+    
     # compute confidence and prediction intervals
     pi <- c(
       mod$coefficients[1, 1] + mod$coefficients[2, 1] * xnew,
@@ -57,92 +74,98 @@ coverage.rq.model5 <- function(
       lower_bound = pi[1],
       upper_bound = pi[2],
       observation = ynew,
-      alpha = 0.05
+      alpha = 0.2
     )
   }
   return(list(pi.hits / nsim, pred_bounds, interval_score))
 }
 
+
 ## simulation coverage 80% quantile regression i.i.d case
 set.seed(21)
 nsim <- 1000
-nobs <- 1000
-quantreg.coverage.model5 <- matrix(NA, nsim, 3)
-quantreg.intScore.model5 <- matrix(NA, nsim, 3)
-model5_bounds <- list(
+nobs <- 500
+quantreg.coverage.model7 <- matrix(NA, nsim, 3)
+quantreg.intScore.model7 <- matrix(NA, nsim, 3)
+model7_bounds <- list(
   matrix(NA, nsim, 2),
   matrix(NA, nsim, 2),
   matrix(NA, nsim, 2)
 )
 
+
 for (k in 1:nsim) {
   # independent variable
-  x <- runif(nobs, -2, 12)
-  xnew.values <- qunif(c(.1, .5, .9), min = -2, max = 12)
-
+  mu.x <- 0
+  sd.x <- 5
+  x <- rnorm(nobs, mean = mu.x, sd = sd.x)
+  xnew.values <- qnorm(c(.1, .5, .9), mean = mu.x, sd = sd.x)
+  
   # base model
-  beta <- c(0.2, -0.4, 0.1)
-
+  beta0 <- 1
+  beta1 <- 3
+  
   for (i in 1:length(xnew.values)) {
-    # normal error
-    model5_pred_int <- coverage.rq.model5(
+    
+    # contaminated normal error
+    model7_pred_int <- coverage.rq(
       x = x,
-      beta = beta, err.distr = "normal",
-      tau = c(0.05, 0.975), xnew = xnew.values[i],
+      beta = c(beta0, beta1), err.distr = "contamin_normal",
+      tau = c(0.1, 0.9), xnew = xnew.values[i],
       nsim = 1
     )
-    model5_bounds[[i]][k, ] <- model5_pred_int[[2]]
-    quantreg.coverage.model5[k, i] <- model5_pred_int[[1]]
-    quantreg.intScore.model5[k, i] <- model5_pred_int[[3]]
+    model7_bounds[[i]][k, ] <- model7_pred_int[[2]]
+    quantreg.coverage.model7[k, i] <- model7_pred_int[[1]]
+    quantreg.intScore.model7[k, i] <- model7_pred_int[[3]]
   }
 }
 
-# coverage
-colMeans(quantreg.coverage.model5)
-0.984 0.827 0.979
+# > # coverage
+#   > colMeans(quantreg.coverage.model7)
+# [1] 0.802 0.801 0.811
+# > 
+#   > 
+#   > # avg interval width
+#   > mean(model7_bounds[[1]][, 2] - model7_bounds[[1]][, 1])
+# [1] 32.79682
+# > 
+#   > mean(model7_bounds[[2]][, 2] - model7_bounds[[2]][, 1])
+# [1] 33.22564
+# > 
+#   > mean(model7_bounds[[3]][, 2] - model7_bounds[[3]][, 1])
+# [1] 32.67396
+# > 
+#   > 
+#   > # avg interval score
+#   > colMeans(quantreg.intScore.model7)
+# [1] 58.47638 59.21910 57.49398
 
-# avg interval width
-mean(model5_bounds[[1]][, 2] - model5_bounds[[1]][, 1])
-mean(model5_bounds[[2]][, 2] - model5_bounds[[2]][, 1])
-mean(model5_bounds[[3]][, 2] - model5_bounds[[3]][, 1])
-# > mean(model5_bounds[[1]][, 2] - model5_bounds[[1]][, 1])
-# [1] 6.246847
-# > mean(model5_bounds[[2]][, 2] - model5_bounds[[2]][, 1])
-# [1] 6.253021
-# > mean(model5_bounds[[3]][, 2] - model5_bounds[[3]][, 1])
-# [1] 6.263487
 
 
-# avg inverval score
-colMeans(quantreg.intScore.model5)
-6.517600 9.903102 6.536152
+#### varying thresholds model simulation model 7 ####
 
-
-#### varying thresholds model simulation model 5 ####
-
-coverage.splitfit.model5 <- function(
+coverage.splitfit <- function(
     x, # covariate
     beta, # true parameter values
     err.distr, # type of error distribution
     tau, # quantiles
     xnew, # new x-value for which to predict
     nsim # number of replicates to simulate
-    ) {
+) {
   pi.hits <- 0
   n <- length(x)
   pred_bounds <- matrix(NA, nsim, 2)
   interval_score <- matrix(NA, nsim, 1)
-
-
+  
   for (i in 1:nsim) {
     # error type
-    if (err.distr == "normal") {
-      err <- rnorm(n, mean = 0, sd = 1)
+    if (err.distr == "contamin_normal") {
+      err <- cont_norm(n, mu1 = 0, sd1 = 5, mu2 = 50, sd2 = 5, prob = 0.1)
     }
-
+    
     # simulate the observed data
-    y <- beta[1] + beta[2] * (x) + beta[3] * (x^2) + err
-
+    y <- beta[1] + beta[2] * x + err
+    
     # fit the model
     ### splits generation
     # k=52 (50 + 2), there are k+1 theta thresholds
@@ -158,7 +181,7 @@ coverage.splitfit.model5 <- function(
     ds <- data.frame(y = y, x = x)
     names(ds)[1] <- "resp"
     datp <- data.frame(x = xnew) ### sample to predict
-
+    
     # VTM
     Splitfit <- VTM(
       data_train = ds,
@@ -170,11 +193,12 @@ coverage.splitfit.model5 <- function(
       lambda = 0,
       alpha = 0
     )
-
+    
     # simulate a new observation to predict
-    if (err.distr == "normal") {
-      ynew <- beta[1] + beta[2] * (xnew) + beta[3] * (xnew^2) + rnorm(1, mean = 0, sd = 1)
+    if (err.distr == "contamin_normal") {
+      ynew <- beta[1] + beta[2] * xnew + cont_norm(1, mu1 = 0, sd1 = 5, mu2 = 50, sd2 = 5, prob = 0.1)
     }
+    
     # compute confidence and prediction intervals
     lower <- ParametricSplitsQuantiles(
       distribution_function = Splitfit$distribution_function,
@@ -193,7 +217,7 @@ coverage.splitfit.model5 <- function(
       lower_bound = pi[1],
       upper_bound = pi[2],
       observation = ynew,
-      alpha = 0.05
+      alpha = 0.2
     )
   }
   return(list(pi.hits / nsim, pred_bounds, interval_score))
@@ -202,58 +226,61 @@ coverage.splitfit.model5 <- function(
 ## simulation coverage 80% varying-threshold model i.i.d case
 set.seed(21)
 nsim <- 1000
-nobs <- 1000
-splitfit.coverage.model5 <- matrix(NA, nsim, 3)
-splitfit.model5_bounds <- list(
+nobs <- 500
+splitfit.coverage.model7 <- matrix(NA, nsim, 3)
+splitfit.intScore.model7 <- matrix(NA, nsim, 3)
+splitfit.model7_bounds <- list(
   matrix(NA, nsim, 2),
   matrix(NA, nsim, 2),
   matrix(NA, nsim, 2)
 )
-splitfit.intScore.model5 <- matrix(NA, nsim, 3)
 
 
 for (k in 1:nsim) {
   # independent variable
-  x <- runif(nobs, -2, 12)
-  xnew.values <- qunif(c(.1, .5, .9), min = -2, max = 12)
-
+  mu.x <- 0
+  sd.x <- 5
+  x <- rnorm(nobs, mean = mu.x, sd = sd.x)
+  xnew.values <- qnorm(c(.1, .5, .9), mean = mu.x, sd = sd.x)
+  
   # base model
-  beta <- c(0.2, -0.4, 0.1)
-
+  beta0 <- 1
+  beta1 <- 3
+  
   for (i in 1:length(xnew.values)) {
-    # normal error
-    splitfit.model5_pred_int <- coverage.splitfit.model5(
+    
+    # contaminated normal error
+    splitfit.model7_pred_int <- coverage.splitfit(
       x = x,
-      beta = beta,
-      err.distr = "normal",
-      tau = c(0.05, 0.975),
+      beta = c(beta0, beta1),
+      err.distr = "contamin_normal",
+      tau = c(0.1, 0.9),
       xnew = xnew.values[i],
       nsim = 1
     )
-
-    splitfit.model5_bounds[[i]][k, ] <- splitfit.model5_pred_int[[2]]
-    splitfit.coverage.model5[k, i] <- splitfit.model5_pred_int[[1]]
-    splitfit.intScore.model5[k, i] <- splitfit.model5_pred_int[[3]]
+    
+    splitfit.model7_bounds[[i]][k, ] <- splitfit.model7_pred_int[[2]]
+    splitfit.coverage.model7[k, i] <- splitfit.model7_pred_int[[1]]
+    splitfit.intScore.model7[k, i] <- splitfit.model7_pred_int[[3]]
   }
   print(k)
 }
 
 # coverage
-colMeans(splitfit.coverage.model5, na.rm = F)
-0.886 0.947 0.928
+colMeans(splitfit.coverage.model7, na.rm = F)
+0.791 0.840 0.902
 
-# avg width
-mean(splitfit.model5_bounds[[1]][, 2] - splitfit.model5_bounds[[1]][, 1])
-mean(splitfit.model5_bounds[[2]][, 2] - splitfit.model5_bounds[[2]][, 1])
-mean(splitfit.model5_bounds[[3]][, 2] - splitfit.model5_bounds[[3]][, 1])
-# > mean(splitfit.model5_bounds[[1]][, 2] - splitfit.model5_bounds[[1]][, 1])
-# [1] 3.367111
-# > mean(splitfit.model5_bounds[[2]][, 2] - splitfit.model5_bounds[[2]][, 1])
-# [1] 4.190683
-# > mean(splitfit.model5_bounds[[3]][, 2] - splitfit.model5_bounds[[3]][, 1])
-# [1] 3.80685
+# avg interval width
+mean(splitfit.model7_bounds[[1]][, 2] - splitfit.model7_bounds[[1]][, 1])
+19.04525
+ 
+mean(splitfit.model7_bounds[[2]][, 2] - splitfit.model7_bounds[[2]][, 1])
+37.54116
 
+mean(splitfit.model7_bounds[[3]][, 2] - splitfit.model7_bounds[[3]][, 1])
+45.47112
 
 # avg interval score
-colMeans(splitfit.intScore.model5, na.rm = F)
-5.384627 5.089889 4.776746
+colMeans(splitfit.intScore.model7, na.rm = F)
+ 57.02856 60.25756 61.20729
+ 

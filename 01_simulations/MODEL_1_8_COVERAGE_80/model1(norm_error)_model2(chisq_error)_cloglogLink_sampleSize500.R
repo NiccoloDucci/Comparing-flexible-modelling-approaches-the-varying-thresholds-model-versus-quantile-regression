@@ -97,7 +97,7 @@ coverage.splitfit <- function(
       lower_bound = pi[1],
       upper_bound = pi[2],
       observation = ynew,
-      alpha = 0.05
+      alpha = 0.2
     )
   }
   return(list(pi.hits / nsim, pred_bounds, interval_score))
@@ -106,7 +106,7 @@ coverage.splitfit <- function(
 ## simulation coverage 80% varying-threshold model i.i.d case
 set.seed(21)
 nsim <- 1000
-nobs <- 1000
+nobs <- 500
 splitfit.coverage.norm <- matrix(NA, nsim, 3)
 splitfit.coverage.chisq <- matrix(NA, nsim, 3)
 
@@ -144,7 +144,7 @@ for (k in 1:nsim) {
       x = x,
       beta = c(beta0, beta1),
       err.distr = "normal",
-      tau = c(0.025, 0.975),
+      tau = c(0.1, 0.9),
       xnew = xnew.values[i],
       nsim = 1
     )
@@ -158,7 +158,7 @@ for (k in 1:nsim) {
       x = x,
       beta = c(beta0, beta1),
       err.distr = "chisq",
-      tau = c(0.025, 0.975),
+      tau = c(0.1, 0.9),
       xnew = xnew.values[i],
       nsim = 1
     )
@@ -171,39 +171,36 @@ for (k in 1:nsim) {
 
 # coverage
 colMeans(splitfit.coverage.norm, na.rm = F)
-0.977 0.950 0.906
-
+ 0.851 0.822 0.728
 colMeans(splitfit.coverage.chisq, na.rm = F )
-0.949 0.982 0.989
+ 0.743 0.780 0.823
 
 # avg interval width
 mean( splitfit.chisq_bounds[[1]][,2] - splitfit.chisq_bounds[[1]][,1])
 mean( splitfit.chisq_bounds[[2]][,2] - splitfit.chisq_bounds[[2]][,1])
 mean( splitfit.chisq_bounds[[3]][,2] - splitfit.chisq_bounds[[3]][,1])
 # > mean( splitfit.chisq_bounds[[1]][,2] - splitfit.chisq_bounds[[1]][,1])
-# [1] 9.191713
+# [1] 5.069283
 # > mean( splitfit.chisq_bounds[[2]][,2] - splitfit.chisq_bounds[[2]][,1])
-# [1] 9.32503
+# [1] 5.59712
 # > mean( splitfit.chisq_bounds[[3]][,2] - splitfit.chisq_bounds[[3]][,1])
-# [1] 11.39549
-
+# [1] 5.797147
 
 mean( splitfit.normal_bounds[[1]][,2] - splitfit.normal_bounds[[1]][,1])
 mean( splitfit.normal_bounds[[2]][,2] - splitfit.normal_bounds[[2]][,1])
 mean( splitfit.normal_bounds[[3]][,2] - splitfit.normal_bounds[[3]][,1])
 # > mean( splitfit.normal_bounds[[1]][,2] - splitfit.normal_bounds[[1]][,1])
-# [1] 4.970753
+# [1] 3.028556
 # > mean( splitfit.normal_bounds[[2]][,2] - splitfit.normal_bounds[[2]][,1])
-# [1] 4.172842
+# [1] 2.671831
 # > mean( splitfit.normal_bounds[[3]][,2] - splitfit.normal_bounds[[3]][,1])
-# [1] 3.683396
-
+# [1] 2.266024
 
 # avg interval score
 colMeans(splitfit.intScore.norm, na.rm = F)
-# [1] 5.376547 5.059542 5.324340
+3.684615 3.467958 3.595834
 
 colMeans(splitfit.intScore.chisq, na.rm = F )
-# 12.58466 10.06243 12.40771
+7.814067 7.904996 8.558380
 
 

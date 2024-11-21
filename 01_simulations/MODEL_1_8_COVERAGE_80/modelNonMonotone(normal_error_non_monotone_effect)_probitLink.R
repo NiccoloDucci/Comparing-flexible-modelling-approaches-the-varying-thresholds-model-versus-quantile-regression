@@ -1,4 +1,4 @@
-### PREDICTION INTERVALS - model 5 normal errors i.i.d with quadratic effect ###
+### PREDICTION INTERVALS - model 1 normal errors i.i.d and model 2 chi-squared errors i.i.d ###
 
 ##### Libraries #####
 library(tidyverse)
@@ -14,35 +14,35 @@ source("C:\\Users\\nicco\\Desktop\\UNI\\00Esami in corso\\Tesi\\ADAC_revision\\0
 
 #####
 
+
 ## PREDICTION INTERVAL SIMULATION ##
 
-#### quantile regression simulation####
-coverage.rq.model5 <- function(
+#### quantile regression  simulation####
+coverage.rq <- function(
     x, # covariate
     beta, # true parameter values
     err.distr, # type of error distribution
     tau, # quantiles
     xnew, # new x-value for which to predict
     nsim # number of replicates to simulate
-    ) {
+) {
   pi.hits <- 0
   n <- length(x)
   pred_bounds <- matrix(NA, nsim, 2)
   interval_score <- matrix(NA, nsim, 1)
-
-
+  
   for (i in 1:nsim) {
     # error type
     if (err.distr == "normal") {
       err <- rnorm(n, mean = 0, sd = 1)
     }
     # simulate the observed data
-    y <- beta[1] + beta[2] * (x) + beta[3] * (x^2) + err
+    y <- beta[1] + beta[2] * (x)^2 + err
     # fit the model
     mod <- rq(formula = y ~ x, tau = tau)
     # simulate a new observation to predict
     if (err.distr == "normal") {
-      ynew <- beta[1] + beta[2] * (xnew) + beta[3] * (xnew^2) + rnorm(1, 0, 1)
+      ynew <- beta[1] + beta[2] * (xnew)^2 + rnorm(1, mean = 0, sd = 1)
     }
     # compute confidence and prediction intervals
     pi <- c(
@@ -57,7 +57,7 @@ coverage.rq.model5 <- function(
       lower_bound = pi[1],
       upper_bound = pi[2],
       observation = ynew,
-      alpha = 0.05
+      alpha = 0.2
     )
   }
   return(list(pi.hits / nsim, pred_bounds, interval_score))
@@ -67,9 +67,10 @@ coverage.rq.model5 <- function(
 set.seed(21)
 nsim <- 1000
 nobs <- 1000
-quantreg.coverage.model5 <- matrix(NA, nsim, 3)
-quantreg.intScore.model5 <- matrix(NA, nsim, 3)
-model5_bounds <- list(
+quantreg.coverage.norm <- matrix(NA, nsim, 3)
+quantreg.intScore.norm <- matrix(NA, nsim, 3)
+
+normal_bounds <- list(
   matrix(NA, nsim, 2),
   matrix(NA, nsim, 2),
   matrix(NA, nsim, 2)
@@ -77,72 +78,72 @@ model5_bounds <- list(
 
 for (k in 1:nsim) {
   # independent variable
-  x <- runif(nobs, -2, 12)
-  xnew.values <- qunif(c(.1, .5, .9), min = -2, max = 12)
-
+  lower <- -10
+  upper <- 10
+  x <- runif(nobs, lower, upper)
+  xnew.values <- qunif(c(.1, .5, .9), lower, upper)
+  
   # base model
-  beta <- c(0.2, -0.4, 0.1)
-
+  beta0 <- 0.1
+  beta1 <- 0.2
+  
   for (i in 1:length(xnew.values)) {
     # normal error
-    model5_pred_int <- coverage.rq.model5(
+    normal_pred_int <- coverage.rq(
       x = x,
-      beta = beta, err.distr = "normal",
-      tau = c(0.05, 0.975), xnew = xnew.values[i],
+      beta = c(beta0, beta1), err.distr = "normal",
+      tau = c(0.1, 0.9), xnew = xnew.values[i],
       nsim = 1
     )
-    model5_bounds[[i]][k, ] <- model5_pred_int[[2]]
-    quantreg.coverage.model5[k, i] <- model5_pred_int[[1]]
-    quantreg.intScore.model5[k, i] <- model5_pred_int[[3]]
+    normal_bounds[[i]][k, ] <- normal_pred_int[[2]]
+    quantreg.coverage.norm[k, i] <- normal_pred_int[[1]]
+    quantreg.intScore.norm[k, i] <- normal_pred_int[[3]]
   }
 }
 
-# coverage
-colMeans(quantreg.coverage.model5)
-0.984 0.827 0.979
+# model 1 coverage
+colMeans(quantreg.coverage.norm)
+1.000 0.483 0.999
+ 
+# model 1 normal interval width
+mean(normal_bounds[[1]][, 2] - normal_bounds[[1]][, 1])
+16.09386
 
-# avg interval width
-mean(model5_bounds[[1]][, 2] - model5_bounds[[1]][, 1])
-mean(model5_bounds[[2]][, 2] - model5_bounds[[2]][, 1])
-mean(model5_bounds[[3]][, 2] - model5_bounds[[3]][, 1])
-# > mean(model5_bounds[[1]][, 2] - model5_bounds[[1]][, 1])
-# [1] 6.246847
-# > mean(model5_bounds[[2]][, 2] - model5_bounds[[2]][, 1])
-# [1] 6.253021
-# > mean(model5_bounds[[3]][, 2] - model5_bounds[[3]][, 1])
-# [1] 6.263487
+mean(normal_bounds[[2]][, 2] - normal_bounds[[2]][, 1])
+16.11376
+ 
+mean(normal_bounds[[3]][, 2] - normal_bounds[[3]][, 1])
+16.13327
 
-
-# avg inverval score
-colMeans(quantreg.intScore.model5)
-6.517600 9.903102 6.536152
+# model 1 normal interval score
+colMeans(quantreg.intScore.norm)
+16.09386 20.50016 16.13374
 
 
-#### varying thresholds model simulation model 5 ####
 
-coverage.splitfit.model5 <- function(
+#### varying threshold model simulation####
+
+coverage.splitfit <- function(
     x, # covariate
     beta, # true parameter values
     err.distr, # type of error distribution
     tau, # quantiles
     xnew, # new x-value for which to predict
     nsim # number of replicates to simulate
-    ) {
+) {
   pi.hits <- 0
   n <- length(x)
   pred_bounds <- matrix(NA, nsim, 2)
   interval_score <- matrix(NA, nsim, 1)
-
-
+  
   for (i in 1:nsim) {
     # error type
     if (err.distr == "normal") {
       err <- rnorm(n, mean = 0, sd = 1)
     }
-
     # simulate the observed data
-    y <- beta[1] + beta[2] * (x) + beta[3] * (x^2) + err
-
+    y <- beta[1] + beta[2] * (x)^2 + err
+    
     # fit the model
     ### splits generation
     # k=52 (50 + 2), there are k+1 theta thresholds
@@ -158,22 +159,22 @@ coverage.splitfit.model5 <- function(
     ds <- data.frame(y = y, x = x)
     names(ds)[1] <- "resp"
     datp <- data.frame(x = xnew) ### sample to predict
-
-    # VTM
+    
+    #VTM
     Splitfit <- VTM(
       data_train = ds,
       data_predict = datp,
       formula = formbin,
       splits = splits,
       num_interpolation_points = length(splits) * 2,
-      family_link = binomial(link = "probit"),
+      family_link = binomial( link = "probit" ),
       lambda = 0,
       alpha = 0
     )
-
+    
     # simulate a new observation to predict
     if (err.distr == "normal") {
-      ynew <- beta[1] + beta[2] * (xnew) + beta[3] * (xnew^2) + rnorm(1, mean = 0, sd = 1)
+      ynew <- beta[1] + beta[2] * (xnew)^2 + rnorm(1, mean = 0, sd = 1)
     }
     # compute confidence and prediction intervals
     lower <- ParametricSplitsQuantiles(
@@ -193,7 +194,7 @@ coverage.splitfit.model5 <- function(
       lower_bound = pi[1],
       upper_bound = pi[2],
       observation = ynew,
-      alpha = 0.05
+      alpha = 0.2
     )
   }
   return(list(pi.hits / nsim, pred_bounds, interval_score))
@@ -203,57 +204,65 @@ coverage.splitfit.model5 <- function(
 set.seed(21)
 nsim <- 1000
 nobs <- 1000
-splitfit.coverage.model5 <- matrix(NA, nsim, 3)
-splitfit.model5_bounds <- list(
+splitfit.coverage.norm <- matrix(NA, nsim, 3)
+
+splitfit.intScore.norm <- matrix(NA, nsim, 3)
+
+splitfit.normal_bounds <- list(
   matrix(NA, nsim, 2),
   matrix(NA, nsim, 2),
   matrix(NA, nsim, 2)
 )
-splitfit.intScore.model5 <- matrix(NA, nsim, 3)
 
 
 for (k in 1:nsim) {
   # independent variable
-  x <- runif(nobs, -2, 12)
-  xnew.values <- qunif(c(.1, .5, .9), min = -2, max = 12)
-
+  lower <- -10
+  upper <- 10
+  x <- runif(nobs, lower, upper)
+  xnew.values <- qunif(c(.1, .5, .9), lower, upper)
+  
   # base model
-  beta <- c(0.2, -0.4, 0.1)
-
+  beta0 <- 0.1
+  beta1 <- 0.2
+  
   for (i in 1:length(xnew.values)) {
     # normal error
-    splitfit.model5_pred_int <- coverage.splitfit.model5(
+    splitfit.normal_pred_int <- coverage.splitfit(
       x = x,
-      beta = beta,
+      beta = c(beta0, beta1),
       err.distr = "normal",
-      tau = c(0.05, 0.975),
+      tau = c(0.1, 0.9),
       xnew = xnew.values[i],
       nsim = 1
     )
-
-    splitfit.model5_bounds[[i]][k, ] <- splitfit.model5_pred_int[[2]]
-    splitfit.coverage.model5[k, i] <- splitfit.model5_pred_int[[1]]
-    splitfit.intScore.model5[k, i] <- splitfit.model5_pred_int[[3]]
+    
+    splitfit.normal_bounds[[i]][k, ] <- splitfit.normal_pred_int[[2]]
+    splitfit.coverage.norm[k, i] <- splitfit.normal_pred_int[[1]]
+    splitfit.intScore.norm[k, i] <- splitfit.normal_pred_int[[3]]
   }
   print(k)
 }
 
-# coverage
-colMeans(splitfit.coverage.model5, na.rm = F)
-0.886 0.947 0.928
 
-# avg width
-mean(splitfit.model5_bounds[[1]][, 2] - splitfit.model5_bounds[[1]][, 1])
-mean(splitfit.model5_bounds[[2]][, 2] - splitfit.model5_bounds[[2]][, 1])
-mean(splitfit.model5_bounds[[3]][, 2] - splitfit.model5_bounds[[3]][, 1])
-# > mean(splitfit.model5_bounds[[1]][, 2] - splitfit.model5_bounds[[1]][, 1])
-# [1] 3.367111
-# > mean(splitfit.model5_bounds[[2]][, 2] - splitfit.model5_bounds[[2]][, 1])
-# [1] 4.190683
-# > mean(splitfit.model5_bounds[[3]][, 2] - splitfit.model5_bounds[[3]][, 1])
-# [1] 3.80685
+# model 1 coverage
+colMeans(splitfit.coverage.norm)
+1.000 0.477 0.996
+
+# model 1 normal interval width
+ mean(splitfit.normal_bounds[[1]][, 2] - splitfit.normal_bounds[[1]][, 1])
+[1] 16.12699
+
+mean(splitfit.normal_bounds[[2]][, 2] - splitfit.normal_bounds[[2]][, 1])
+ 16.10864
+ 
+mean(splitfit.normal_bounds[[3]][, 2] - splitfit.normal_bounds[[3]][, 1])
+[1] 16.08854
+
+# model 1 normal interval score
+colMeans(splitfit.intScore.norm)
+16.12699 20.49128 16.09841
 
 
-# avg interval score
-colMeans(splitfit.intScore.model5, na.rm = F)
-5.384627 5.089889 4.776746
+
+#####

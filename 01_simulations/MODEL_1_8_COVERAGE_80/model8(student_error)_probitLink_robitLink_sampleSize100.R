@@ -28,12 +28,12 @@ coverage.rq <- function(
     tau, # quantiles
     xnew, # new x-value for which to predict
     nsim # number of replicates to simulate
-    ) {
+) {
   pi.hits <- 0
   n <- length(x)
   pred_bounds <- matrix(NA, nsim, 2)
   interval_score <- matrix(NA, nsim, 1)
-
+  
   for (i in 1:nsim) {
     # error type
     if (err.distr == "student") {
@@ -69,7 +69,7 @@ coverage.rq <- function(
 ## simulation coverage 80% quantile regression i.i.d case
 set.seed(21)
 nsim <- 1000
-nobs <- 1000
+nobs <- 100
 quantreg.coverage.model8 <- matrix(NA, nsim, 3)
 quantreg.intScore.model8 <- matrix(NA, nsim, 3)
 model8_bounds <- list(
@@ -82,12 +82,12 @@ for (k in 1:nsim) {
   # independent variable
   x <- runif(nobs, 0, 6)
   xnew.values <- qunif(c(.1, .5, .9), 0, 6)
-
+  
   # base model
   beta0 <- 1
   beta1 <- 0.5
   beta2 <- 1
-
+  
   for (i in 1:length(xnew.values)) {
     # student error(df=3)
     model8_pred_int <- coverage.rq(
@@ -104,22 +104,17 @@ for (k in 1:nsim) {
 
 # coverage
 colMeans(quantreg.coverage.model8)
-# 0.904 0.649 0.899
+
 
 # avg interval width
 mean(model8_bounds[[1]][, 2] - model8_bounds[[1]][, 1])
 mean(model8_bounds[[2]][, 2] - model8_bounds[[2]][, 1])
 mean(model8_bounds[[3]][, 2] - model8_bounds[[3]][, 1])
-#> mean(model8_bounds[[1]][,2]-model8_bounds[[1]][,1])
-# [1] 7.914
-#> mean(model8_bounds[[2]][,2]-model8_bounds[[2]][,1])
-# [1] 7.964
-#> mean(model8_bounds[[3]][,2]-model8_bounds[[3]][,1])
-# [1] 7.965
+
 
 # avg interval score
 colMeans(quantreg.intScore.model8)
-#  9.284812 11.702761  9.068056
+
 
 #### PROBIT LINK: varying thresholds model simulation model 8  ####
 
@@ -130,12 +125,12 @@ coverage.splitfit <- function(
     tau, # quantiles
     xnew, # new x-value for which to predict
     nsim # number of replicates to simulate
-    ) {
+) {
   pi.hits <- 0
   n <- length(x)
   pred_bounds <- matrix(NA, nsim, 2)
   interval_score <- matrix(NA, nsim, 1)
-
+  
   for (i in 1:nsim) {
     # error type
     if (err.distr == "student") {
@@ -143,7 +138,7 @@ coverage.splitfit <- function(
     }
     # simulate the observed data
     y <- beta[1] + beta[2] * x + beta[3] * (x^2) + err
-
+    
     # fit the model
     ### splits generation
     # k=52 (50 + 2), there are k+1 theta thresholds
@@ -159,7 +154,7 @@ coverage.splitfit <- function(
     ds <- data.frame(y = y, x = x)
     names(ds)[1] <- "resp"
     datp <- data.frame(x = xnew) ### sample to predict
-
+    
     # VTM
     Splitfit <- VTM(
       data_train = ds,
@@ -171,13 +166,13 @@ coverage.splitfit <- function(
       lambda = 0,
       alpha = 0
     )
-
-
+    
+    
     # simulate a new observation to predict
     if (err.distr == "student") {
       ynew <- beta[1] + beta[2] * xnew + beta[3] * (xnew^2) + rt(1, df = 3)
     }
-
+    
     # compute confidence and prediction intervals
     lower <- ParametricSplitsQuantiles(
       distribution_function = Splitfit$distribution_function,
@@ -205,7 +200,7 @@ coverage.splitfit <- function(
 ## simulation coverage 80% varying-threshold model i.i.d case
 set.seed(21)
 nsim <- 1000
-nobs <- 1000
+nobs <- 100
 splitfit.coverage.model8 <- matrix(NA, nsim, 3)
 splitfit.intScore.model8 <- matrix(NA, nsim, 3)
 splitfit.model8_bounds <- list(
@@ -218,12 +213,12 @@ for (k in 1:nsim) {
   # independent variable
   x <- runif(nobs, 0, 6)
   xnew.values <- qunif(c(.1, .5, .9), 0, 6)
-
+  
   # base model
   beta0 <- 1
   beta1 <- 0.5
   beta2 <- 1
-
+  
   for (i in 1:length(xnew.values)) {
     # student error(df=3)
     splitfit.model8_pred_int <- coverage.splitfit(
@@ -241,24 +236,26 @@ for (k in 1:nsim) {
   print(k)
 }
 
+
 # coverage
 colMeans(splitfit.coverage.model8)
-# [1] 0.798 0.914 0.870
+0.818 0.696 0.568
 
 # avg interval width
 mean(splitfit.model8_bounds[[1]][, 2] - splitfit.model8_bounds[[1]][, 1])
 mean(splitfit.model8_bounds[[2]][, 2] - splitfit.model8_bounds[[2]][, 1])
 mean(splitfit.model8_bounds[[3]][, 2] - splitfit.model8_bounds[[3]][, 1])
-#> mean( splitfit.model8_bounds[[1]][,2] - splitfit.model8_bounds[[1]][,1])
-# [1] 3.340
-#> mean( splitfit.model8_bounds[[2]][,2] - splitfit.model8_bounds[[2]][,1])
-# [1] 5.171
-#> mean( splitfit.model8_bounds[[3]][,2] - splitfit.model8_bounds[[3]][,1])
-# [1] 4.729
-
+> mean(splitfit.model8_bounds[[1]][, 2] - splitfit.model8_bounds[[1]][, 1])
+[1] 4.582932
+> mean(splitfit.model8_bounds[[2]][, 2] - splitfit.model8_bounds[[2]][, 1])
+[1] 3.700991
+> mean(splitfit.model8_bounds[[3]][, 2] - splitfit.model8_bounds[[3]][, 1])
+[1] 3.658974
+ 
 # avg interval score
 colMeans(splitfit.intScore.model8)
-# 5.836625 6.343311 6.106887
+6.823257 6.892225 9.223573
+
 
 
 #### ROBIT LINK: varying thresholds model simulation model 8  ####
@@ -270,12 +267,12 @@ coverage.splitfit <- function(
     tau, # quantiles
     xnew, # new x-value for which to predict
     nsim # number of replicates to simulate
-    ) {
+) {
   pi.hits <- 0
   n <- length(x)
   pred_bounds <- matrix(NA, nsim, 2)
   interval_score <- matrix(NA, nsim, 1)
-
+  
   for (i in 1:nsim) {
     # error type
     if (err.distr == "student") {
@@ -283,7 +280,7 @@ coverage.splitfit <- function(
     }
     # simulate the observed data
     y <- beta[1] + beta[2] * x + beta[3] * (x^2) + err
-
+    
     # fit the model
     ### splits generation
     # k=52 (50 + 2), there are k+1 theta thresholds
@@ -301,7 +298,7 @@ coverage.splitfit <- function(
     datp <- data.frame(x = xnew) ### sample to predict
     # robit link
     link_new <- gosset(nu = 3)
-
+    
     # VTM
     Splitfit <- VTM(
       data_train = ds,
@@ -313,13 +310,13 @@ coverage.splitfit <- function(
       lambda = 0,
       alpha = 0
     )
-
-
+    
+    
     # simulate a new observation to predict
     if (err.distr == "student") {
       ynew <- beta[1] + beta[2] * xnew + beta[3] * (xnew^2) + rt(1, df = 3)
     }
-
+    
     # compute confidence and prediction intervals
     lower <- ParametricSplitsQuantiles(
       distribution_function = Splitfit$distribution_function,
@@ -347,7 +344,7 @@ coverage.splitfit <- function(
 ## simulation coverage 80% varying-threshold model i.i.d case
 set.seed(21)
 nsim <- 1000
-nobs <- 1000
+nobs <- 100
 splitfit.coverage.model8_probit <- matrix(NA, nsim, 3)
 splitfit.intScore.model8_probit <- matrix(NA, nsim, 3)
 splitfit.model8_bounds_probit <- list(
@@ -360,12 +357,12 @@ for (k in 1:nsim) {
   # independent variable
   x <- runif(nobs, 0, 6)
   xnew.values <- qunif(c(.1, .5, .9), 0, 6)
-
+  
   # base model
   beta0 <- 1
   beta1 <- 0.5
   beta2 <- 1
-
+  
   for (i in 1:length(xnew.values)) {
     # student error(df=3)
     splitfit.model8_pred_int_probit <- coverage.splitfit(
@@ -383,22 +380,21 @@ for (k in 1:nsim) {
   print(k)
 }
 
-# coverage
-colMeans(splitfit.coverage.model8_probit, na.rm = F)
-# [1] 0.747 0.810 0.793
+> # coverage
+  > colMeans(splitfit.coverage.model8_probit, na.rm = F)
+[1] 0.801 0.652 0.528
+> 
+  > # avg interval width
+  > mean(splitfit.model8_bounds_probit[[1]][, 2] - splitfit.model8_bounds_probit[[1]][, 1])
+[1] 4.272313
+> 
+  > mean(splitfit.model8_bounds_probit[[2]][, 2] - splitfit.model8_bounds_probit[[2]][, 1])
+[1] 2.948366
+> 
+  > mean(splitfit.model8_bounds_probit[[3]][, 2] - splitfit.model8_bounds_probit[[3]][, 1])
+[1] 3.154959
+> 
+  > # avg interval score
+  > colMeans(splitfit.intScore.model8_probit, na.rm = F)
+[1] 6.801108 6.761585 9.488118
 
-
-# avg interval width
-mean(splitfit.model8_bounds_probit[[1]][, 2] - splitfit.model8_bounds_probit[[1]][, 1])
-mean(splitfit.model8_bounds_probit[[2]][, 2] - splitfit.model8_bounds_probit[[2]][, 1])
-mean(splitfit.model8_bounds_probit[[3]][, 2] - splitfit.model8_bounds_probit[[3]][, 1])
-#> mean( splitfit.chisq_bounds[[1]][,2] - splitfit.chisq_bounds[[1]][,1])
-# [1] 2.956
-#> mean( splitfit.chisq_bounds[[2]][,2] - splitfit.chisq_bounds[[2]][,1])
-# [1] 3.442
-#> mean( splitfit.chisq_bounds[[3]][,2] - splitfit.chisq_bounds[[3]][,1])
-# [1] 3.375
-
-# avg interval score
-colMeans(splitfit.intScore.model8_probit, na.rm = F)
-#  5.896 5.604 5.627
